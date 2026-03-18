@@ -67,3 +67,34 @@ if uploaded_file is not None:
 
 else:
     st.info("Please upload your IPL dataset to begin")
+st.subheader("⚔️ Batter vs Bowler Analysis")
+
+col1, col2 = st.columns(2)
+
+batter = col1.selectbox(
+    "Select Batter (Battle)",
+    sorted(deliveries["Batter"].dropna().unique()),
+    key="batter_vs"
+)
+
+bowler = col2.selectbox(
+    "Select Bowler",
+    sorted(deliveries["Bowler"].dropna().unique())
+)
+
+battle_data = deliveries[
+    (deliveries["Batter"] == batter) &
+    (deliveries["Bowler"] == bowler)
+]
+
+runs = battle_data["Batter Runs"].sum()
+balls = len(battle_data)
+dismissals = battle_data["Is Wicket"].sum()
+
+sr = (runs / balls) * 100 if balls > 0 else 0
+
+st.write(f"Runs: {runs}")
+st.write(f"Balls: {balls}")
+st.write(f"Dismissals: {dismissals}")
+st.write(f"Strike Rate: {round(sr,2)}")
+st.bar_chart(battle_data["Batter Runs"].value_counts())
