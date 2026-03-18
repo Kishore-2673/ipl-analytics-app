@@ -1,30 +1,69 @@
 import streamlit as st
 import pandas as pd
 
-st.title("IPL Analytics Dashboard")
+st.set_page_config(page_title="IPL Analytics", layout="wide")
 
-uploaded_file = st.file_uploader("Upload IPL Dataset")
+st.title("🏏 IPL Analytics Dashboard")
 
-if uploaded_file:
-    deliveries = pd.read_excel(uploaded_file, sheet_name="Deliveries")
+uploaded_file = st.file_uploader("Upload IPL Dataset (.xlsx)")
 
-    player = st.selectbox("Select Batter", deliveries["Batter"].unique())
+# Cache to make app fast
+@st.cache_data
+def load_data(file):
+    return pd.read_excel(file, sheet_name="Deliveries")
+
+if uploaded_file is not None:
+
+    deliveries = load_data(uploaded_file)
+
+    st.success("Dataset Loaded Successfully ✅")
+
+    # ---------------- PLAYER SELECT ----------------
+    player = st.selectbox(
+        "Select Batter",
+        sorted(deliveries["Batter"].dropna().unique())
+    )
 
     data = deliveries[deliveries["Batter"] == player]
 
     runs = data["Batter Runs"].sum()
     balls = len(data)
+    fours = len(data[data["Batter Runs"] == 4])
+    sixes = len(data[data["Batter Runs"] == 6])
 
-    st.write("Runs:", runs)
-    st.write("Balls:", balls)
-    st.write("Strike Rate:", round((runs/balls)*100,2))
-st.subheader("Top 10 Run Scorers")
+    strike_rate = (runs / balls) * 100 if balls > 0 else 0
 
-top_runs = (
-    deliveries.groupby("Batter")["Batter Runs"]
-    .sum()
-    .sort_values(ascending=False)
-    .head(10)
-)
+    # ---------------- PLAYER STATS ----------------
+    st.subheader(f"📊 {player} Stats")
 
-st.bar_chart(top_runs)
+    col1, col2, col3, col4 = st.columns(4)
+
+    col1.metric("Runs", runs)
+    col2.metric("Balls", balls)
+    col3.metric("Strike Rate", round(strike_rate, 2))
+    col4.metric("Fours / Sixes", f"{fours} / {sixes}")
+
+    # ---------------- TOP RUN SCORERS ----------------
+    st.subheader("🔥 Top 10 Run Scorers")
+
+    top_runs = (
+        deliveries.groupby("Batter")["Batter Runs"]
+        .sum()
+        .sort_values(ascending=False)
+        .head(10)
+    )
+
+    st.dataframe(top_runs)
+    st.bar_chart(top_runs)
+
+    # ---------------- ADDITIONAL ANALYTICS ----------------
+    st.subheader("⚡ Extra Insights")
+
+    total_runs = deliveries["Batter Runs"].sum()
+    total_balls = len(deliveries)
+
+    st.write("Total Runs in Dataset:", total_runs)
+    st.write("Total Balls in Dataset:", total_balls)
+
+else:
+    st.info("Please upload your IPL dataset to begin")
