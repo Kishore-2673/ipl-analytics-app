@@ -18,3 +18,13 @@ if uploaded_file:
     st.write("Runs:", runs)
     st.write("Balls:", balls)
     st.write("Strike Rate:", round((runs/balls)*100,2))
+st.subheader("Top 10 Run Scorers")
+
+top_runs = (
+    deliveries.groupby("Batter")["Batter Runs"]
+    .sum()
+    .sort_values(ascending=False)
+    .head(10)
+)
+
+st.bar_chart(top_runs)
